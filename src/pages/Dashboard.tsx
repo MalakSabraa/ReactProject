@@ -1,86 +1,74 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Typography, TextField,
-  Box, FormControl, InputLabel, Select, MenuItem,
-  TablePagination
-} from '@mui/material';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
+import { Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Paper, TablePagination} from '@mui/material';
+import type { Todo } from '../types/todo';
+import type { SelectChangeEvent } from '@mui/material';
 
 const Dashboard: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [search, setSearch] = useState('');
-  const [attribute, setAttribute] = useState<'name' | 'email' | 'id'>('name');
-  const [page, setPage] = useState(0); 
-  const [rowsPerPage, setRowsPerPage] = useState(5); 
-
+  const [filterAttr, setFilterAttr] = useState<'id' | 'todo' | 'userId'>('id');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(res => res.json())
-      .then((data: User[]) => setUsers(data))
-      .catch(err => console.error('Error fetching users:', err));
+    fetch('https://dummyjson.com/todos?limit=150')
+      .then((res) => res.json())
+      .then((data) => {
+        setTodos(data.todos);
+      });
   }, []);
 
-  
-  const filteredUsers = users.filter((user) => {
-    const valueToCheck = attribute === 'name'
-      ? user.name
-      : attribute === 'email'
-      ? user.email
-      : String(user.id);
+  const filteredTodos = todos.filter((t) => {
+    const valueToCheck =
+      filterAttr === 'id'
+        ? String(t.id)
+        : filterAttr === 'todo'
+        ? t.todo
+        : String(t.userId);
     return valueToCheck.toLowerCase().includes(search.toLowerCase());
   });
 
-
-  const paginatedUsers = filteredUsers.slice(
+  const paginatedTodos = filteredTodos.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
 
-  
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0); 
+  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(e.target.value, 10));
+    setPage(0);
   };
 
   return (
-    <Box sx={{ padding: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Users
-      </Typography>
-      <Typography variant="body2" gutterBottom>
-        List of users
+    <Box sx={{ p: 4 }}>
+      <Typography variant="h4" gutterBottom sx={{ mt: 2 }}>
+        Todos
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 2, marginBottom: 2 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
         <TextField
-          label={`Search by ${attribute}`}
+          label="Search Query"
           variant="outlined"
           size="small"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>Attribute</InputLabel>
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel>Filter</InputLabel>
           <Select
-            value={attribute}
-            label="Attribute"
-            onChange={(e) => setAttribute(e.target.value as 'name' | 'email' | 'id')}
+            value={filterAttr}
+            label="Filter"
+            onChange={(e: SelectChangeEvent) =>
+              setFilterAttr(e.target.value as 'id' | 'todo' | 'userId')
+            }
           >
-            <MenuItem value="name">Name</MenuItem>
-            <MenuItem value="email">Email</MenuItem>
-            <MenuItem value="id">ID</MenuItem>
+            <MenuItem value="id">Id</MenuItem>
+            <MenuItem value="todo">Todo</MenuItem>
+            <MenuItem value="userId">User ID</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -89,32 +77,38 @@ const Dashboard: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
+              <TableCell>Id</TableCell>
+              <TableCell>Todo</TableCell>
+              <TableCell>Completed</TableCell>
+              <TableCell>User ID</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedUsers.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.id}</TableCell>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
+            {paginatedTodos.map((t) => (
+              <TableRow key={t.id}>
+                <TableCell>{t.id}</TableCell>
+                <TableCell>{t.todo}</TableCell>
+                <TableCell>{t.completed ? 'true' : 'false'}</TableCell>
+                <TableCell>{t.userId}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
         <TablePagination
           component="div"
-          count={filteredUsers.length} 
+          count={filteredTodos.length}
           page={page}
           onPageChange={handleChangePage}
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[5, 10, 20, 50]}
           labelRowsPerPage="Rows per page:"
         />
       </TableContainer>
+
+      <Typography variant="body2" sx={{ mt: 2 }} align="center">
+        Today {new Date().toLocaleDateString()} you use ruffle!
+      </Typography>
     </Box>
   );
 };
