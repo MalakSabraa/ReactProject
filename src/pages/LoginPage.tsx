@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   TextField,
@@ -21,21 +21,22 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const token = localStorage.getItem('token');
-  const expiry = localStorage.getItem('tokenExpiry');
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const expiry = localStorage.getItem('tokenExpiry');
 
-  if (token && expiry) {
-    const expiryTime = parseInt(expiry);
-    const now = Date.now();
+    if (token && expiry) {
+      const expiryTime = parseInt(expiry);
+      const now = Date.now();
 
-    if (now < expiryTime) {
-      navigate('/dashboard');
-      return null; 
-    } else {
-      localStorage.removeItem('token');
-      localStorage.removeItem('tokenExpiry');
+      if (now < expiryTime) {
+        navigate('/dashboard');
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('tokenExpiry');
+      }
     }
-  }
+  }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -69,7 +70,7 @@ const LoginPage: React.FC = () => {
       localStorage.setItem('token', data.token);
 
       if (rememberMe) {
-        const expiresInDays = 7;
+        const expiresInDays = 1;
         const expiryTimestamp = Date.now() + expiresInDays * 24 * 60 * 60 * 1000;
         localStorage.setItem('tokenExpiry', expiryTimestamp.toString());
       } else {
@@ -148,7 +149,7 @@ const LoginPage: React.FC = () => {
 
           <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
             <Button type="submit" variant="contained" color="primary" disabled={loading}>
-              login
+              Login
             </Button>
           </Box>
 
