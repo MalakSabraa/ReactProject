@@ -1,7 +1,7 @@
 import LoginPage from "../pages/LoginPage";
 import Dashboard from "../pages/Dashboard"; 
 import { Routes, Route } from 'react-router-dom';
-import ProtectedRoute from '../components/ProtectedRoute';
+import ProtectedRoute from '../utils/ProtectedRoute';
 
 const AppRoutes: React.FC = () => {
   return (

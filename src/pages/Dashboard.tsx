@@ -1,5 +1,21 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Typography, TextField, FormControl, InputLabel, Select, MenuItem, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Paper, TablePagination} from '@mui/material';
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  TableContainer,
+  Paper,
+  TablePagination,
+} from '@mui/material';
 import type { Todo } from '../types/todo';
 import type { SelectChangeEvent } from '@mui/material';
 
@@ -10,22 +26,26 @@ const Dashboard: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  useEffect(() => {
-    fetch('https://dummyjson.com/todos?limit=150')
+  if (todos.length === 0) {
+    fetch('https://dummyjson.com/todos')
       .then((res) => res.json())
       .then((data) => {
         setTodos(data.todos);
       });
-  }, []);
+  }
 
   const filteredTodos = todos.filter((t) => {
-    const valueToCheck =
-      filterAttr === 'id'
-        ? String(t.id)
-        : filterAttr === 'todo'
-        ? t.todo
-        : String(t.userId);
-    return valueToCheck.toLowerCase().includes(search.toLowerCase());
+    let valueToCheck: string;
+
+    if (filterAttr === 'id') {
+      valueToCheck = String(t.id);
+    } else if (filterAttr === 'todo') {
+      valueToCheck = t.todo?.toLowerCase() ?? '';
+    } else {
+      valueToCheck = String(t.userId);
+    }
+
+    return valueToCheck.includes(search.toLowerCase());
   });
 
   const paginatedTodos = filteredTodos.slice(
