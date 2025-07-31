@@ -11,37 +11,26 @@ import {
 } from '@mui/material';
 
 const LoginPage: React.FC = () => {
-  const [form, setForm] = useState({
+  const [values, setValues] = useState({
     username: '',
     password: '',
     rememberMe: false,
   });
 
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const expiry = localStorage.getItem('tokenExpiry');
-
-    if (token && expiry) {
-      const expiryTime = parseInt(expiry);
-      const now = Date.now();
-
-      if (now < expiryTime) {
-        navigate('/dashboard');
-      } else {
-        localStorage.removeItem('token');
-        localStorage.removeItem('tokenExpiry');
-      }
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) {
+      navigate('/dashboard'); 
     }
   }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setForm((prevForm) => ({
-      ...prevForm,
+    setValues((prev) => ({
+      ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
@@ -49,118 +38,101 @@ const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
-
-    const { username, password, rememberMe } = form;
 
     try {
       const response = await fetch('https://dummyjson.com/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({
+          username: values.username,
+          password: values.password,
+        }),
       });
 
       if (!response.ok) {
-        setError('Invalid username or password');
-        setLoading(false);
-        return;
+        throw new Error('Login failed');
       }
 
       const data = await response.json();
-      localStorage.setItem('token', data.token);
 
-      if (rememberMe) {
-        const expiresInDays = 1;
-        const expiryTimestamp = Date.now() + expiresInDays * 24 * 60 * 60 * 1000;
-        localStorage.setItem('tokenExpiry', expiryTimestamp.toString());
-      } else {
-        localStorage.removeItem('tokenExpiry');
-      }
+      // Use the same key 'token' to be consistent
+      const storage = values.rememberMe ? localStorage : sessionStorage;
+      storage.setItem('token', data.accessToken);
 
-      navigate('/dashboard');
-    } catch {
-      setError('Something went wrong. Try again.');
-    } finally {
-      setLoading(false);
+      navigate('/dashboard'); // Or change to "/todos"
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('Invalid username or password');
     }
   };
 
   return (
     <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
-      }}
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      height="100vh"
+      bgcolor="#f5f5f5"
     >
       <Paper elevation={3} sx={{ padding: 4, width: 400 }}>
-        <Typography variant="h5" gutterBottom align="center">
+        <Typography variant="h5" align="center" gutterBottom>
           Login
         </Typography>
 
-        {error && (
-          <Typography color="error" align="center" sx={{ marginBottom: 2 }}>
-            {error}
-          </Typography>
-        )}
-
         <form onSubmit={handleLogin}>
           <TextField
-            id="username"
+            fullWidth
+            label="Username *"
             name="username"
-            label="Username"
-            variant="outlined"
-            type="text"
-            fullWidth
-            margin="normal"
-            color="primary"
-            required
-            value={form.username}
+            value={values.username}
             onChange={handleChange}
+            margin="normal"
           />
-
           <TextField
-            id="password"
-            name="password"
-            label="Password"
-            variant="outlined"
-            type="password"
             fullWidth
-            margin="normal"
-            color="primary"
-            required
-            value={form.password}
+            label="Password *"
+            name="password"
+            type="password"
+            value={values.password}
             onChange={handleChange}
+            margin="normal"
           />
 
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="rememberMe"
-                checked={form.rememberMe}
-                onChange={handleChange}
-                color="primary"
-              />
-            }
-            label="Remember Me"
-          />
-
-          <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
-            <Button type="submit" variant="contained" color="primary" disabled={loading}>
-              Login
-            </Button>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  name="rememberMe"
+                  checked={values.rememberMe}
+                  onChange={handleChange}
+                />
+              }
+              label="Remember Me"
+            />
+            <Link to="/forgot-password" style={{ textDecoration: 'none' }}>
+               Forgot Password?
+            </Link>
           </Box>
 
-          <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2, gap: 6 }}>
-            <Typography variant="body2">
-              New User? <Link to="/signup">Sign up</Link>
+          {error && (
+            <Typography color="error" variant="body2" mt={1}>
+              {error}
             </Typography>
-            <Typography variant="body2">
-              <Link to="/forgot-password">Forget Password</Link>
-            </Typography>
-          </Box>
+          )}
+
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            sx={{ mt: 2 }}
+          >
+            LOGIN
+          </Button>
+
+          <Typography align="center" variant="body2" mt={2}>
+            New User? <Link to="/signup">Signup</Link> 
+          </Typography>
         </form>
       </Paper>
     </Box>

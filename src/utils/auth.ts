@@ -1,3 +1,3 @@
 export const hasToken = (): boolean => {
-  return localStorage.getItem('token') !== null;
+  return !!localStorage.getItem('token') || !!sessionStorage.getItem('token');
 };
