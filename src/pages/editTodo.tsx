@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -8,51 +8,70 @@ import {
   TextField,
   Typography,
   Alert,
+  CircularProgress,
 } from '@mui/material';
-import { useLocation } from 'react-router-dom';
-import type { TodoData } from '../types/editTodoData';
-
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { fetchTodoById, updateTodoById } from '../services/todos.service';
+import Layout from '../component/layout';
 
 const EditTodo: React.FC = () => {
-  const location = useLocation();
-  const todoData = location.state as TodoData;
+  const { id } = useParams<{ id: string }>();
+  const todoId = Number(id);
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
-  const [todo, setTodo] = useState(todoData?.todo || '');
-  const [userId, setUserId] = useState(todoData?.userId.toString() || '');
-  const [completed, setCompleted] = useState(todoData?.completed || false);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['todo', todoId],
+    queryFn: () => fetchTodoById(todoId, token!),
+    enabled: !!token && !!todoId,
+  });
+
+  const [todo, setTodo] = useState('');
+  const [userId, setUserId] = useState('');
+  const [completed, setCompleted] = useState(false);
   const [status, setStatus] = useState<'success' | 'error' | null>(null);
 
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+  useEffect(() => {
+    if (data) {
+      setTodo(data.todo);
+      setUserId(String(data.userId));
+      setCompleted(data.completed);
+    }
+  }, [data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!token || !todoData?.id) {
+    if (!token || !todoId) {
       setStatus('error');
       return;
     }
 
-    const res = await fetch(`https://dummyjson.com/todos/${todoData.id}`, {
-      method: 'PUT', 
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        todo,
-        completed,
-        userId: Number(userId),
-      }),
-    });
-
-    if (res.ok) {
+    try {
+      await updateTodoById(todoId, { todo, completed, userId: Number(userId) }, token);
       setStatus('success');
-    } else {
+    } catch (error) {
       setStatus('error');
+      console.error(error);
     }
   };
 
+  if (isLoading) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="h5">Loading Todo...</Typography>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !data) {
+    return <Typography color="error" sx={{ p: 4 }}>Failed to load todo.</Typography>;
+  }
+
   return (
+    <Layout title='Edit Todo'>
     <Box sx={{ p: 4, maxWidth: 500, margin: 'auto' }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom>
@@ -110,6 +129,7 @@ const EditTodo: React.FC = () => {
         )}
       </Paper>
     </Box>
+    </Layout>
   );
 };
 

@@ -29,13 +29,14 @@ const AppRoutes: React.FC = () => {
       />
 
       <Route
-        path="/editTodo"
+        path="/edit/:id"
         element={
-          <ProtectedRoute>
-            <EditTodo />
-          </ProtectedRoute>
-        }
+        <ProtectedRoute>
+         <EditTodo />
+        </ProtectedRoute>
+       }
       />
+
     </Routes>
   );
 };

@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 
 const LoginPage: React.FC = () => {
-  const [values, setValues] = useState({
+  const [form, setform] = useState({
     username: '',
     password: '',
     rememberMe: false,
@@ -29,43 +29,47 @@ const LoginPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setValues((prev) => ({
+    setform ((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  setError("");
 
-    try {
-      const response = await fetch('https://dummyjson.com/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: values.username,
-          password: values.password,
-        }),
-      });
+  try {
+    const res = await fetch("https://dummyjson.com/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: form.username,
+        password: form.password,
+      }),
+    });
 
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data = await response.json();
-
-      // Use the same key 'token' to be consistent
-      const storage = values.rememberMe ? localStorage : sessionStorage;
-      storage.setItem('token', data.accessToken);
-
-      navigate('/dashboard'); // Or change to "/todos"
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Invalid username or password');
+    if (!res.ok) {
+      throw new Error("Invalid credentials");
     }
-  };
 
+    const data = await res.json();
+    const storage = form.rememberMe ? localStorage : sessionStorage;
+
+    storage.setItem("token", data.accessToken); 
+
+    const fullName = `${data.firstName} ${data.lastName}`;
+    storage.setItem("fullName", fullName);
+    storage.setItem("user", JSON.stringify(data));
+
+    navigate("/dashboard");
+  } catch (err) {
+    console.error("Login error:", err);
+    setError("Invalid username or password");
+  }
+};
   return (
     <Box
       display="flex"
@@ -84,7 +88,7 @@ const LoginPage: React.FC = () => {
             fullWidth
             label="Username *"
             name="username"
-            value={values.username}
+            value={form.username}
             onChange={handleChange}
             margin="normal"
           />
@@ -93,7 +97,7 @@ const LoginPage: React.FC = () => {
             label="Password *"
             name="password"
             type="password"
-            value={values.password}
+            value={form.password}
             onChange={handleChange}
             margin="normal"
           />
@@ -103,7 +107,7 @@ const LoginPage: React.FC = () => {
               control={
                 <Checkbox
                   name="rememberMe"
-                  checked={values.rememberMe}
+                  checked={form.rememberMe}
                   onChange={handleChange}
                 />
               }

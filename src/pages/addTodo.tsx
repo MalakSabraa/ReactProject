@@ -9,6 +9,7 @@ import {
   Typography,
   Alert,
 } from '@mui/material';
+import Layout from '../component/layout';
 
 const AddTodo: React.FC = () => {
   const [todo, setTodo] = useState('');
@@ -50,6 +51,7 @@ const AddTodo: React.FC = () => {
   };
 
   return (
+    <Layout title = "Add Todo">
    <Box sx={{ p: 4, maxWidth: 500, margin: 'auto' }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom>
@@ -109,6 +111,7 @@ const AddTodo: React.FC = () => {
         )}
       </Paper>
     </Box>
+    </Layout>
   );
 };
 
