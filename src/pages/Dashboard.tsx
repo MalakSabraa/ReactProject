@@ -116,13 +116,9 @@ const Dashboard: React.FC = () => {
               <TableRow>
                 <TableCell>Id</TableCell>
                 <TableCell>Todo</TableCell>
-                <TableCell sx={{ pr: 10 }} >
-                  Completed
-                  </TableCell>
+                <TableCell sx={{ pr: 10 }}>Completed</TableCell>
                 <TableCell>User ID</TableCell>
-                <TableCell sx={{ pl: 9 }}> 
-                 Actions
-                </TableCell>
+                <TableCell sx={{ pl: 6 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -132,30 +128,29 @@ const Dashboard: React.FC = () => {
                   <TableCell>{t.todo}</TableCell>
                   <TableCell>{t.completed ? 'true' : 'false'}</TableCell>
                   <TableCell>{t.userId}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Button
                       variant="outlined"
                       size="small"
                       onClick={() => navigate(`/edit/${t.id}`)}
-                      sx={{ mr: 1 }}
                     >
                       Edit
                     </Button>
                     <Tooltip title="View Todo Info">
                       <IconButton
-                        color="secondary"
                         onClick={() => {
                           setSelectedTodo(t);
                           setOpenDialog(true);
                         }}
+                        sx={{ color: '#1976d2' }} 
                       >
                         <VisibilityIcon />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete Todo">
                       <IconButton
-                        color="error"
                         onClick={() => handleDelete(t.id)}
+                        sx={{ color: '#e53935' }}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -184,14 +179,13 @@ const Dashboard: React.FC = () => {
       </Box>
 
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Todo Info</DialogTitle>
+        <DialogTitle>Todo Details</DialogTitle>
         <DialogContent dividers>
           {selectedTodo ? (
             <>
               <Typography><strong>ID:</strong> {selectedTodo.id}</Typography>
               <Typography><strong>Todo:</strong> {selectedTodo.todo}</Typography>
-              <Typography><strong>Completed:</strong> {selectedTodo.completed ? 'Yes' : 'No'}</Typography>
-              <Typography><strong>User ID:</strong> {selectedTodo.userId}</Typography>
+              <Typography><strong>Completed:</strong> {selectedTodo.completed ? '✅ Yes' : ' ❌ No'}</Typography>
             </>
           ) : (
             <Typography>No data</Typography>

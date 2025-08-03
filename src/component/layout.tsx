@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import {
-  AppBar, Toolbar, Typography, IconButton, Avatar, Menu, MenuItem, Box
+  AppBar, Toolbar, Typography, IconButton, Avatar, Menu, MenuItem, Box, Button
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { LayoutProps } from '../types/layoutProps';
 
-
-const Layout: React.FC<LayoutProps> = ({ children, title }) => {
+const Layout: React.FC<LayoutProps> = ({ children}) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const fullName = localStorage.getItem('fullName') || sessionStorage.getItem('fullName') || 'User';
   const firstName = fullName.split(' ')[0];
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -31,7 +31,22 @@ const Layout: React.FC<LayoutProps> = ({ children, title }) => {
     <Box>
       <AppBar position="static" sx={{ mb: 2 }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6">{title}</Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              color="inherit"
+              onClick={() => navigate('/dashboard')}
+              variant={location.pathname === '/dashboard' ? 'outlined' : 'text'}
+            >
+              Dashboard
+            </Button>
+            <Button
+              color="inherit"
+              onClick={() => navigate('/users')}
+              variant={location.pathname === '/users' ? 'outlined' : 'text'}
+            >
+              Users
+            </Button>
+          </Box>
 
           <Box>
             <IconButton onClick={handleMenuClick} color="inherit" size="large" edge="end">

@@ -4,6 +4,7 @@ import AddTodo from "../pages/addTodo";
 import EditTodo from "../pages/editTodo";
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '../utils/ProtectedRoute';
+import Users from "../pages/UsersPage"
 
 const AppRoutes: React.FC = () => {
   return (
@@ -37,7 +38,17 @@ const AppRoutes: React.FC = () => {
        }
       />
 
+      <Route
+        path="/users"
+        element={
+        <ProtectedRoute>
+          <Users/>
+        </ProtectedRoute>
+        }
+      />
     </Routes>
+
+  
   );
 };
 
