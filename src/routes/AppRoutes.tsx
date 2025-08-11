@@ -1,7 +1,7 @@
 import LoginPage from "../pages/LoginPage";
 import Dashboard from "../pages/Dashboard";
-import AddTodo from "../pages/addTodo";
-import EditTodo from "../pages/editTodo";
+import AddTodo from "../component/addTodo";
+import EditTodo from "../component/editTodo";
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '../utils/ProtectedRoute';
 import Users from "../pages/UsersPage"

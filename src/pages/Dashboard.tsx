@@ -1,114 +1,219 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, TextField, FormControl, InputLabel,
   Select, MenuItem, Table, TableHead, TableRow, TableCell,
-  TableBody, TableContainer, Paper, TablePagination, CircularProgress,
-  Button, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions
+  TableBody, TableContainer, Paper, TablePagination, Button,
+  IconButton, Tooltip, Alert, Dialog, DialogTitle, DialogContent,
+  DialogActions, Snackbar,
+  CircularProgress
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteIcon from '@mui/icons-material/Delete';
-
-import type { Todo } from '../types/todo';
-import type { SelectChangeEvent } from '@mui/material';
-import { fetchTodos } from '../services/todos.service';
+import { fetchTodos, updateTodoById, addTodo } from '../services/todos.service';
 import Layout from '../component/layout';
+import InlineEditRow from '../component/editTodo';
+import InlineAddRow from '../component/addTodo';
+import type { Todo } from '../types/todo';
+import { Search } from '@mui/icons-material';
 
 const Dashboard: React.FC = () => {
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [filterAttr, setFilterAttr] = useState<'id' | 'todo' | 'userId'>('id');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const navigate = useNavigate();
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editData, setEditData] = useState<Partial<Todo>>({});
+  const [newTodo, setNewTodo] = useState<Partial<Todo>>({
+    todo: '',
+    userId: 0,
+    completed: false,
+  });
+  const [property, setProperty] = useState("id"); 
+  const [message, setMessage] = useState<string | null>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [delayedSearch, setDelayedSearch] = useState(searchInput);
+  const [viewedTodo, setViewedTodo] = useState<Todo | null>(null);
+  const [editErrors, setEditErrors] = useState<{ todo?: string; userId?: string }>({});
+  const [addErrors, setAddErrors] = useState<{ todo?: string; userId?: string }>({});
+  const [debouncedSearch , setDebouncedSearch] = useState(searchInput);
+  const [filterAttribute , setFilterAttribute] = useState('Todo');
+  const queryClient = useQueryClient();
 
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token') || undefined;
 
-  const {
-    data,
-    error,
-    isLoading,
-  } = useQuery({
-    queryKey: ['todos', page, rowsPerPage],
-    queryFn: () => fetchTodos(page, rowsPerPage, token!),
-    enabled: !!token,
-    staleTime: 1000 * 60, // 1 minute
+  useEffect(() => {
+  const timeout = setTimeout(() => {
+    setDebouncedSearch(searchInput);
+  }, 500);
+
+  return () => clearTimeout(timeout);
+}, [searchInput]);
+
+
+  const { data, error, isLoading, isInitialLoading, isFetching, isError } = useQuery({
+  queryKey: ['todos', page, rowsPerPage, debouncedSearch, property],
+  queryFn: () =>
+    fetchTodos(page + 1, rowsPerPage, debouncedSearch, property),
+  keepPreviousData: true, 
   });
 
-  if (isLoading) {
-    return (
-      <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h5">Loading Todos...</Typography>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error || !data) {
-    return <Typography color="error" sx={{ p: 4 }}>Failed to load todos.</Typography>;
-  }
-
-  const filteredTodos = data.todos.filter((t: Todo) => {
-    const value = filterAttr === 'id'
-      ? String(t.id)
-      : filterAttr === 'userId'
-        ? String(t.userId)
-        : t.todo?.toLowerCase() ?? '';
-    return value.includes(search.toLowerCase());
-  });
 
   const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
+
   const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(e.target.value, 10));
     setPage(0);
   };
 
-  const handleDelete = (id: number) => {
-    alert(`Deleting todo with ID: ${id}`);
-  };
+  const handleSaveEdit = async (id: number) => {
+  const errors: { todo?: string; userId?: string } = {};
+
+  if (!editData.todo || editData.todo.trim() === '') {
+    errors.todo = 'Todo content is required.';
+  }
+
+  if (
+    editData.userId === undefined ||
+    isNaN(Number(editData.userId)) ||
+    Number(editData.userId) <= 0
+  ) {
+    errors.userId = 'User ID must be a valid positive number.';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    setEditErrors(errors);
+    return;
+  }
+
+  setEditErrors({}); 
+
+  try {
+    await updateTodoById(id, editData, token!);
+    setEditingId(null);
+    refetch();
+    setSnackbarMessage(`Todo with ID ${updated.attributes?.id || id} updated successfully`);
+
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
+
+  const handleAddTodo = async () => {
+  const errors: { todo?: string; userId?: string } = {};
+
+  if (!newTodo.todo || newTodo.todo.trim() === '') {
+    errors.todo = 'Todo content is required.';
+  }
+
+  if (
+    newTodo.userId === undefined ||
+    isNaN(Number(newTodo.userId)) ||
+    Number(newTodo.userId) <= 0
+  ) {
+    errors.userId = 'User ID must be a valid positive number.';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    setAddErrors(errors);
+    return;
+  }
+
+  setAddErrors({}); 
+
+  try {
+    await addTodo(newTodo);
+    setNewTodo({ todo: '', userId: 0, completed: false });
+    refetch();
+    setSnackbarMessage('New todo added successfully');
+    setIsAdding(false);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+  const handleDelete = useMutation({
+    mutationFn: async (id: number) => {
+      await fetch(`http://localhost:1337/api/todos/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] });
+      setSnackbarMessage('Todo deleted successfully');
+    },
+  });
+
+  if (isInitialLoading)
+  return (
+    <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Typography sx={{ mb: 2 }}>Loading...</Typography>
+      <CircularProgress />
+    </Box>
+  );
+
+   
+  if (isError)
+  {
+    return (
+      <Box>
+      <Typography color="error" sx={{ p: 4 }}>
+        Failed to load todos.
+      </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Layout title="Dashboard">
       <Box sx={{ p: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ mt: 2 }}>
+        <Typography variant="h4" gutterBottom>
           Todos
         </Typography>
 
         <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
           <TextField
-            label="Search Query"
-            variant="outlined"
-            size="small"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+  label="Search"
+  variant="outlined"
+  size="small"
+  value={searchInput}
+  onChange={(e) => setSearchInput(e.target.value)}
+/>
+
 
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>Filter</InputLabel>
             <Select
-              value={filterAttr}
+              value={property}
               label="Filter"
-              onChange={(e: SelectChangeEvent) =>
-                setFilterAttr(e.target.value as 'id' | 'todo' | 'userId')
+              onChange={(e) =>
+                setProperty(e.target.value)
               }
             >
-              <MenuItem value="id">Id</MenuItem>
-              <MenuItem value="todo">Todo</MenuItem>
-              <MenuItem value="userId">User ID</MenuItem>
+              <MenuItem value="id">ID</MenuItem>
+  <MenuItem value="todo">Todo</MenuItem>
+  <MenuItem value="userId">User ID</MenuItem>
             </Select>
           </FormControl>
 
           <Button
             variant="contained"
-            color="primary"
-            onClick={() => navigate('/addTodo')}
-            sx={{ height: '40px', marginLeft: 'auto' }}
+            onClick={() => setIsAdding(true)}
+            sx={{ marginLeft: 'auto' }}
           >
             Add Todo
           </Button>
         </Box>
+
+        {message && (
+          <Box sx={{ mb: 2 }}>
+            <Alert severity="success">{message}</Alert>
+          </Box>
+        )}
 
         <TableContainer component={Paper}>
           <Table>
@@ -116,54 +221,79 @@ const Dashboard: React.FC = () => {
               <TableRow>
                 <TableCell>Id</TableCell>
                 <TableCell>Todo</TableCell>
-                <TableCell sx={{ pr: 10 }}>Completed</TableCell>
+                <TableCell>Completed</TableCell>
                 <TableCell>User ID</TableCell>
-                <TableCell sx={{ pl: 6 }}>Actions</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredTodos.map((t: Todo) => (
-                <TableRow key={t.id}>
-                  <TableCell>{t.id}</TableCell>
-                  <TableCell>{t.todo}</TableCell>
-                  <TableCell>{t.completed ? 'true' : 'false'}</TableCell>
-                  <TableCell>{t.userId}</TableCell>
-                  <TableCell sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => navigate(`/edit/${t.id}`)}
-                    >
-                      Edit
-                    </Button>
-                    <Tooltip title="View Todo Info">
-                      <IconButton
+              {isAdding && (
+                <InlineAddRow
+  newTodo={newTodo}
+  setNewTodo={setNewTodo}
+  onAdd={handleAddTodo}
+  onCancel={() => {
+    setIsAdding(false);
+    setNewTodo({ todo: '', userId: 0, completed: false });
+    setAddErrors({});
+  }}
+  errors={addErrors}
+/>
+
+              )}
+
+              {data.data.map((t: Todo) => {
+                const todo = t.todo ?? '—';
+                const completed = t.completed ?? false;
+                const userId = t.userId ?? '—';
+
+                return editingId === t.id ? (
+                  <InlineEditRow
+  key={t.id}
+  todo={{ ...t }}
+  editData={editData}
+  setEditData={setEditData}
+  onSave={() => handleSaveEdit(t.documentId)}
+  onCancel={() => setEditingId(null)}
+  errors={editErrors}
+/>
+
+                ) : (
+                  <TableRow key={t.id}>
+                    <TableCell>{t.id}</TableCell>
+                    <TableCell>{todo}</TableCell>
+                    <TableCell>{completed ? 'true' : 'false'}</TableCell>
+                    <TableCell>{userId}</TableCell>
+                    <TableCell>
+                      <Button
+                        size="small"
                         onClick={() => {
-                          setSelectedTodo(t);
-                          setOpenDialog(true);
+                          setEditingId(t.id);
+                          setEditData({ todo, completed, userId });
                         }}
-                        sx={{ color: '#1976d2' }} 
                       >
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete Todo">
-                      <IconButton
-                        onClick={() => handleDelete(t.id)}
-                        sx={{ color: '#e53935' }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
+                        Edit
+                      </Button>
+                      <Tooltip title="View">
+                        <IconButton onClick={() => setViewedTodo(t)}>
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton onClick={() => handleDelete.mutate(t.documentId)}>
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
 
           <TablePagination
             component="div"
-            count={data.total}
+            count={data?.meta?.pagination?.total || 0}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
@@ -173,30 +303,27 @@ const Dashboard: React.FC = () => {
           />
         </TableContainer>
 
-        <Typography variant="body2" sx={{ mt: 2 }} align="center">
-          Today {new Date().toLocaleDateString()} you use ruffle!
-        </Typography>
-      </Box>
+        <Dialog open={!!viewedTodo} onClose={() => setViewedTodo(null)}>
+          <DialogTitle>Todo Details</DialogTitle>
+          <DialogContent dividers>
+            <Typography><strong>ID:</strong> {viewedTodo?.id}</Typography>
+            <Typography><strong>Todo:</strong> {viewedTodo?.todo}</Typography>
+            <Typography><strong>Completed:</strong> {viewedTodo?.completed ? '✅ Yes' : '❌ No'}</Typography>
+            <Typography><strong>User ID:</strong> {viewedTodo?.userId}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setViewedTodo(null)} color="primary">Close</Button>
+          </DialogActions>
+        </Dialog>
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Todo Details</DialogTitle>
-        <DialogContent dividers>
-          {selectedTodo ? (
-            <>
-              <Typography><strong>ID:</strong> {selectedTodo.id}</Typography>
-              <Typography><strong>Todo:</strong> {selectedTodo.todo}</Typography>
-              <Typography><strong>Completed:</strong> {selectedTodo.completed ? '✅ Yes' : ' ❌ No'}</Typography>
-            </>
-          ) : (
-            <Typography>No data</Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)} color="primary">
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
+        <Snackbar
+          open={!!snackbarMessage}
+          autoHideDuration={3000}
+          onClose={() => setSnackbarMessage(null)}
+          message={snackbarMessage}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        />
+      </Box>
     </Layout>
   );
 };

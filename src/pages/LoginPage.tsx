@@ -58,7 +58,7 @@ const LoginPage: React.FC = () => {
     const data = await res.json();
     const storage = form.rememberMe ? localStorage : sessionStorage;
 
-    storage.setItem("token", data.accessToken); 
+    storage.setItem("token", import.meta.env.VITE_TOKEN);
 
     const fullName = `${data.firstName} ${data.lastName}`;
     storage.setItem("fullName", fullName);
