@@ -1,16 +1,13 @@
 import LoginPage from "../pages/LoginPage";
 import Dashboard from "../pages/Dashboard";
-import AddTodo from "../component/addTodo";
-import EditTodo from "../component/editTodo";
 import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from '../utils/ProtectedRoute';
-import Users from "../pages/UsersPage"
+import Users from "../pages/UsersPage";
 
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<LoginPage />} />
-
       <Route
         path="/dashboard"
         element={
@@ -19,36 +16,15 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
-
-      <Route
-        path="/addTodo"
-        element={
-          <ProtectedRoute>
-            <AddTodo />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/edit/:id"
-        element={
-        <ProtectedRoute>
-         <EditTodo />
-        </ProtectedRoute>
-       }
-      />
-
       <Route
         path="/users"
         element={
-        <ProtectedRoute>
-          <Users/>
-        </ProtectedRoute>
+          <ProtectedRoute>
+            <Users />
+          </ProtectedRoute>
         }
       />
     </Routes>
-
-  
   );
 };
 

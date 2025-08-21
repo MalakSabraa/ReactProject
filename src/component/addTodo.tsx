@@ -1,28 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TableRow,
   TableCell,
   TextField,
   Checkbox,
   Button,
-  Typography,
   Box,
+  Select,
+  MenuItem,
+  FormHelperText,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import type { Todo } from '../types/todo';
+import type { User } from '../types/User';
+import { fetchUsers } from '../services/users.service';
 
 type Props = {
-  onAdd: (todo: Omit<Todo, 'id'>) => void;
+  onAdd: (todo: Omit<Todo, 'id' | 'documentId'>) => void;
   onCancel: () => void;
 };
 
 const AddTodo: React.FC<Props> = ({ onAdd, onCancel }) => {
-  const [addData, setAddData] = useState<Partial<Omit<Todo, 'id'>>>({
+  const [addData, setAddData] = useState<Partial<Omit<Todo, 'id' | 'documentId'>>>({
     todo: '',
     completed: false,
-    userId: undefined,
+    userId: undefined, // will hold documentId string of user
   });
 
+  const [users, setUsers] = useState<User[]>([]);
   const [errors, setErrors] = useState<{ todo?: string; userId?: string }>({});
+
+  // ✅ fetch users on mount
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const { users } = await fetchUsers(1, 100, "", ""); // fetch first 100 users
+        setUsers(users);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+      }
+    };
+    loadUsers();
+  }, []);
 
   const handleSave = () => {
     const newErrors: { todo?: string; userId?: string } = {};
@@ -31,19 +51,17 @@ const AddTodo: React.FC<Props> = ({ onAdd, onCancel }) => {
       newErrors.todo = 'Todo content is required.';
     }
 
-    if (
-      addData.userId === undefined ||
-      isNaN(addData.userId) ||
-      addData.userId <= 0
-    ) {
-      newErrors.userId = 'User ID must be a valid positive number.';
-    }
+    // ✅ userId can be null/undefined (optional) → so only validate if required
+    // if (!addData.userId) {
+    //   newErrors.userId = 'A valid user must be selected.';
+    // }
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) return;
 
-    onAdd(addData as Omit<Todo, 'id'>);
+    onAdd(addData as Omit<Todo, 'id' | 'documentId'>);
+
     setAddData({ todo: '', completed: false, userId: undefined });
     setErrors({});
   };
@@ -51,6 +69,7 @@ const AddTodo: React.FC<Props> = ({ onAdd, onCancel }) => {
   return (
     <TableRow>
       <TableCell>New</TableCell>
+
       <TableCell>
         <Box display="flex" flexDirection="column">
           <TextField
@@ -58,55 +77,56 @@ const AddTodo: React.FC<Props> = ({ onAdd, onCancel }) => {
             onChange={(e) => setAddData({ ...addData, todo: e.target.value })}
             size="small"
             error={!!errors.todo}
+            helperText={errors.todo}
           />
-          {errors.todo && (
-            <Typography variant="body2" color="error">
-              {errors.todo}
-            </Typography>
-          )}
         </Box>
       </TableCell>
+
       <TableCell>
         <Checkbox
           checked={!!addData.completed}
-          onChange={(e) =>
-            setAddData({ ...addData, completed: e.target.checked })
-          }
+          onChange={(e) => setAddData({ ...addData, completed: e.target.checked })}
         />
       </TableCell>
+
       <TableCell>
-        <Box display="flex" flexDirection="column">
-          <TextField
-            type="text"
-            value={
-              addData.userId !== undefined && addData.userId !== null
-                ? addData.userId
-                : ''
+        <FormControl size="small" fullWidth error={!!errors.userId}>
+          <InputLabel id="user-select-label">Select User</InputLabel>
+          <Select
+            labelId="user-select-label"
+            value={addData.userId || ""}
+            onChange={(e) =>
+              setAddData({ ...addData, userId: e.target.value || undefined })
             }
-            onChange={(e) => {
-              const value = e.target.value;
-              if (value === '') {
-                setAddData({ ...addData, userId: undefined });
-                return;
-              }
-              if (!/^\d+$/.test(value)) return;
-              setAddData({ ...addData, userId: Number(value) });
-            }}
-            size="small"
-            error={!!errors.userId}
-          />
-          {errors.userId && (
-            <Typography variant="body2" color="error">
-              {errors.userId}
-            </Typography>
-          )}
-        </Box>
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {users.map((user) => (
+              <MenuItem key={user.documentId} value={user.documentId}>
+                {user.FirstName} {user.LastName}
+              </MenuItem>
+            ))}
+          </Select>
+          <FormHelperText>{errors.userId}</FormHelperText>
+        </FormControl>
       </TableCell>
+
       <TableCell>
-        <Button size="small" onClick={handleSave}>
+        <Button
+          size="small"
+          onClick={handleSave}
+          variant="contained"
+          color="primary"
+        >
           Add
         </Button>
-        <Button size="small" onClick={onCancel}>
+        <Button
+          size="small"
+          onClick={onCancel}
+          variant="outlined"
+          sx={{ ml: 1 }}
+        >
           Cancel
         </Button>
       </TableCell>

@@ -27,6 +27,7 @@ const LoginPage: React.FC = () => {
     }
   }, [navigate]);
 
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setform ((prev) => ({
@@ -70,6 +71,7 @@ const LoginPage: React.FC = () => {
     setError("Invalid username or password");
   }
 };
+
   return (
     <Box
       display="flex"

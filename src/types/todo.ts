@@ -1,26 +1,52 @@
+import type {User} from "../types/User";
+
 export type Todo = {
-  id: number; 
+  id: number;
   todo: string;
   completed: boolean;
-  userId: number;
+  userId: {
+    id: number;
+    FirstName: string;
+    LastName: string;
+    Username: string;
+  };
 };
+
+
 
 export interface TodoItem {
   id: number;
   Todo: string;
   Completed: boolean | null;
-  userId: number;
+  userId: User | null;
 }
 
-
 export type TodoResponse = {
-  data: TodoItem[];
-  meta: {
-    pagination: {
-      total: number;
-      page: number;
-      pageSize: number;
-      pageCount: number;
+  todos: {
+    data: {
+      id: string;
+      attributes: {
+        todo: string;
+        completed: boolean;
+        user: {
+          data: {
+            id: string;
+            attributes: {
+              username: string;
+              email: string;
+            };
+          } | null;
+        };
+      };
+    }[];
+    meta: {
+      pagination: {
+        total: number;
+        page: number;
+        pageSize: number;
+        pageCount: number;
+      };
     };
   };
 };
+

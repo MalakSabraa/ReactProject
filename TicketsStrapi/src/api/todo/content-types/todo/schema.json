@@ -11,14 +11,17 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "userId": {
-      "type": "integer"
-    },
     "completed": {
       "type": "boolean"
     },
     "todo": {
       "type": "string"
+    },
+    "userId": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::employee.employee",
+      "inversedBy": "todos"
     }
   }
 }

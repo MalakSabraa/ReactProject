@@ -9,9 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "dev:rest": "vite --open index.html",
-  "dev:gql": "vite --open index-gql.html",
-  "build:rest": "vite build --config vite.config.ts --base=/rest",
-  "build:gql": "vite build --config vite.config.ts --base=/gql"
+    "dev:gql": "vite --open index-gql.html",
+    "build:rest": "vite build --config vite.config.ts --base=/rest",
+    "build:gql": "vite build --config vite.config.ts --base=/gql"
   },
   "dependencies": {
     "@apollo/client": "^3.13.9",
@@ -21,11 +21,14 @@
     "@mui/material": "^7.2.0",
     "@tailwindcss/vite": "^4.1.11",
     "@tanstack/react-query": "^5.83.0",
+    "chart.js": "^4.5.0",
     "graphql": "^16.11.0",
     "graphql-request": "^7.2.0",
     "react": "^19.1.0",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.0",
+    "recharts": "^3.1.2",
     "tailwind": "^4.0.0"
   },
   "devDependencies": {
